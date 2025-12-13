@@ -133,6 +133,39 @@ public class BuckeAndRepartitionDemo {
         // For demo: write to bucketed tables (in real env, this is typically Parquet in a warehouse)
         // Make sure you have a warehouse dir configured, e.g. spark.sql.warehouse.dir
         // and Hive support if needed.
+        /**
+         *
+         * 1. Can Spark write bucketed data without Hive? Yes.
+         * This works even without Hive:
+         * df.write()
+         *   .bucketBy(8, "product_id")
+         *   .sortBy("product_id")
+         *   .saveAsTable("demo_orders_bucketed");
+         * saveAsTable() requires a catalog/warehouse directory.
+         * Spark will create directory structure and files, but without Hive support it cannot store bucket metadata.
+         * So Spark sees the output as just Parquet files, NOT as a “bucketed table.”
+         *
+         * 2. Will Spark USE bucketing during joins without Hive support? No.
+         * To skip shuffles on bucketed joins, Spark must know:
+         *      Number of buckets
+         *      Bucket column
+         *      Sort order
+         * These are stored in the Hive metastore table metadata. Without Hive support:
+         *      Spark cannot read that metadata.
+         *      It cannot guarantee consistent bucketing.
+         *      It will NOT avoid shuffle.
+         *      Physical plan will still show Exchange hashpartitioning(...).
+         *      So bucketing becomes just fancy file layout, not a performance optimization.
+         *
+         * 3. What happens without Hive support?
+         * If you run:  orders.write().bucketBy(8, "product_id").sortBy("product_id").saveAsTable("x")
+         * Without enabling Hive:
+         * Spark internally falls back to V2 catalog behavior
+         * Table metadata does NOT store bucket info
+         * On join, Spark still performs shuffle
+         * → Exchange hashpartitioning(product_id, 8)
+         * So the benefit is lost.
+         */
         orders.write()
                 .mode(SaveMode.Overwrite)
                 .bucketBy(numBuckets, "product_id")

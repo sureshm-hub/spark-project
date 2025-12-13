@@ -111,6 +111,8 @@ Joins
         intermediary table. 
         The cost of the shuffle and sort steps can be reduced when joining large tables by defining the sorted
         intermediary tables in advance.
+        Spark bucketing actually works as intended only when Hive support (or a catalog that supports bucket metadata) 
+        is enabled.
         Use bucketing only if you have:
             Hive metastore (Spark + Hive catalog)
             Large dimension/fact stable tables
