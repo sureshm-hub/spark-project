@@ -75,6 +75,55 @@ Partitions
             spark.sql.files.maxPartitionBytes
             spark.sql.adaptive.* (for AQE)
         ```
+    - Overcome data skew
+        On the Stage tab in the Spark UI, examine the Event Timeline page. You can see an uneven distribution of tasks
+        Another important page is Summary Metrics, which shows statistics for Spark tasks with percentiles for Duration,
+        GC Time, Spill (memory), Spill (disk), and so on
+        Use keys with a large range of values for the join keys. In a shuffle join, partitions are determined for each
+        hash value of a key. 
+        If a join key's cardinality is too low, the hash function is more likely to do a bad job of distributing your 
+        data across partitions. Therefore, if your application and business logic support it, 
+        consider using a higher cardinality key or a composite key.
+        ```java 
+            # Use Single Primary Key
+            df_joined = df1_select.join(df2_select, ["primary_key"]) 
+            # Use Composite Key
+            df_joined = df1_select.join(df2_select, ["primary_key","secondary_key"])
+        ```
+
+Joins
+    -   Shuffle join:
+        Shuffle Hash Join: 
+        The shuffle hash join joins two tables without sorting and distributes the join between the two tables. 
+        It's suitable for joins of small tables that can be stored in the Spark executor's memory.
+        Sort-merge join: 
+        distributes the two tables to be joined by key and sorts them before joining. 
+        It's suitable for joins of large tables.
+    -   Broadcast hash join:
+        A broadcast hash join pushes the smaller RDD or table to each of the worker nodes. 
+        Then it does a map-side combine with each partition of the larger RDD or table.
+    - Bucketing:
+        The sort-merge join requires two phases, shuffle and sort, and then merge. These two phases can overload the 
+        Spark executor and cause OOM and performance issues when some of the executors are merging and others are 
+        sorting simultaneously. 
+        In such cases, it might be possible to efficiently join by using bucketing.
+        Bucketing will pre-shuffle and pre-sort your input on join keys, and then write that sorted data to an
+        intermediary table. 
+        The cost of the shuffle and sort steps can be reduced when joining large tables by defining the sorted
+        intermediary tables in advance.
+        Use bucketing only if you have:
+            Hive metastore (Spark + Hive catalog)
+            Large dimension/fact stable tables
+            Repeatable joins where pre-shuffling is worth the cost
+            Long-lived tables (warehouse/lakehouse)
+            NOT recommended for ad-hoc Spark jobs or dynamic pipelines.
+        you can still manually coalesce & repartition:
+            Use this instead (recommended for non-Hive Spark apps):
+            ```java
+                Dataset<Row> left  = df1.repartition(200, col("key"));
+                Dataset<Row> right = df2.repartition(200, col("key"));
+                left.join(right, "key");
+            ```
 
 Example: proj.hobby.bigdata.rdd.tx.ShuffleDemo
     -   Read the orders data and repartition into 4 (4 partitions = 4 tasks)
