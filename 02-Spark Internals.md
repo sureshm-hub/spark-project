@@ -1,4 +1,4 @@
-Transformations:
+# Transformations:
     Narrow
         - work on same partition with no shuffle
         - ex: map, flatMap, filter, mapPartitions, union, coalesce, withColumn
@@ -6,7 +6,7 @@ Transformations:
         - require data from other partitions and causes shuffle and triggers a new job Stage
         - ex: reduceByKey, groupByKey, distinct, sortByKey, join, intersection, Repartition
 
-Tx's, Action's, DAG's Stages, Jobs:
+# Tx's, Action's, DAG's Stages, Jobs:
     DAG:
         A DAG (Directed Acyclic Graph) = all your transformations linked together.
         Spark builds this DAG lazily and optimizes it before running.
@@ -34,7 +34,7 @@ Tx's, Action's, DAG's Stages, Jobs:
             Stages are 0-indexed (Stage 0, Stage 1, …)
             Jobs are 0-indexed (Job 0, Job 1, …)
 
-Example: proj.hobby.bigdata.rdd.tx.NarrowWideXformer
+# Example: proj.hobby.bigdata.rdd.tx.NarrowWideXformer
     Spark breaks this DAG into stages:
         Narrow-only chains -> stay in the same stage.
         A wide transformation (shuffle) -> cuts and starts a new stage.
@@ -82,7 +82,7 @@ Example: proj.hobby.bigdata.rdd.tx.NarrowWideXformer
             coalesce(2, false);
         but no Action on them - so those do not create a new Job (unless we later add something like coalesced.count()).
 
-Catalyst(Optimizer), Tungsten(Physical Execution), DAG(Scheduler):
+# Catalyst(Optimizer), Tungsten(Physical Execution), DAG(Scheduler):
     What really happens when following spark program is run proj.hobby.bigdata.dataset.tx.??:
         Logical Plan (Unresolved) (Spark parses your operations into a tree):
             Project, Filter, Aggregate, etc.
@@ -150,7 +150,7 @@ Catalyst(Optimizer), Tungsten(Physical Execution), DAG(Scheduler):
             *(2) HashAggregate(keys=[category#12], functions=[sum(amount#14)], ...)
         ```
 
-Spark Tuning:
+# Spark Tuning:
     ```java
         agg.explain();                      // simple logical + physical
         agg.explain("extended");            // all plans
@@ -266,5 +266,5 @@ Spark Tuning:
             - Decide which table to broadcast
             - Estimate cardinalities to reduce silly plans
 
-Resources:
+# Resources:
     https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/key-topics-apache-spark.html

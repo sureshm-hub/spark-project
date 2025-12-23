@@ -1,4 +1,4 @@
-What is Shuffle?
+# What is Shuffle?
     - Certain operations, such as join() and groupByKey(), require Spark to perform a shuffle
     - Shuffles is a costly data redistribution across executors:
         Disk I/O
@@ -6,7 +6,7 @@ What is Shuffle?
         CPU & Memory load
     - Storing the intermediate data, it can exhaust space on the executor's local disk, which causes the Spark job to fail.
 
-How?
+# How?
     - shuffle is split into 2 phases:
     -   map-side (writing intermediate data to local disk, often with pre-aggregation): writing of sorted, partitioned data to disk by mappers
         - When map tasks finish, they don't just hold data in memory; they organize it by the target partition/key and write it to local disk files (one file per reducer).
@@ -23,7 +23,7 @@ How?
             Aggregation: The final processing (e.g., summing, counting) happens on this merged, sorted data.
             Result: The final processed data, grouped by key, ready for the next stage or output.
 
-Partitions
+# Partitions
     -   File read: partitions are tied to: file size & maxPartitionBytes.
             numInputPartitions ≈ ceil(totalSize / maxPartitionBytes)
             ex: orders.csv ~ 250MB with spark.sql.files.maxPartitionBytes = 128MB  -> 2 partitions
@@ -91,7 +91,7 @@ Partitions
             df_joined = df1_select.join(df2_select, ["primary_key","secondary_key"])
         ```
 
-Joins
+# Joins
     -   Shuffle join:
         Shuffle Hash Join: 
         The shuffle hash join joins two tables without sorting and distributes the join between the two tables. 
@@ -127,7 +127,7 @@ Joins
                 left.join(right, "key");
             ```
 
-Example: proj.hobby.bigdata.rdd.tx.ShuffleDemo
+# Example: proj.hobby.bigdata.rdd.tx.ShuffleDemo
     -   Read the orders data and repartition into 4 (4 partitions = 4 tasks)
     -   Read the customers data and repartition into 4 (4 partitions = 4 tasks)
     -   On OrdersData Apply transformations (filter and withColumn flow through without shuffling)
@@ -162,7 +162,7 @@ Example: proj.hobby.bigdata.rdd.tx.ShuffleDemo
                 All rows with the same customer_id are guaranteed to be in the same partition
             Next operations flow through until another shuffle or action
 
-Takeaway:
+# Takeaway:
     1. Shuffle Files Live on Disk (spark.local.dir)  & Not Memory, then read back into memory. This provides:
         Fault tolerance (tasks can retry without recomputing)
         Memory relief (data doesn’t all fit in RAM)
@@ -202,7 +202,7 @@ Takeaway:
         # For 8 cores:
         spark.conf.set("spark.sql.shuffle.partitions", "32")
 
-Optimization & Monitoring:
+# Optimization & Monitoring:
     Configure adequate disk space for Executors & Monitor disk usage
         - If spark.local.dir fills up, executors crash (Shuffle Disk Space Matters for Large jobs  & can generate GB's of shuffle files).
     Consider broadcast joins for small tables
@@ -218,6 +218,6 @@ Optimization & Monitoring:
         df_joined  = df1_select.join(df2_select, ["product_id"])
     ```
 
-Resources:
+# Resources:
     https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html
     https://medium.com/@sairam94.a/what-i-learned-about-spark-shuffles-after-8-years-of-writing-production-jobs-33d454c92150

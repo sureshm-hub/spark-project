@@ -1,10 +1,10 @@
-Main Spark APIs:
+# Main Spark APIs:
     SparkContext = low-level handle to the cluster for RDDs
     SQLContext = pre-2.0 entry point for DataFrames + SQL
     StreamingContext = pre-Structured-Streaming entry point for DStreams
     SparkSession = latest unified entry point (SQL, DataFrames, Datasets, Structured Streaming) that wraps a SparkContext
 
-SparkContext:
+# SparkContext:
     Lives on the driver; represents your app’s connection to the cluster.
     Cluster manager (local, YARN, K8s, Mesos, standalone)
     Executors and resources
@@ -36,7 +36,7 @@ SparkContext:
         JavaSparkContext sc = new JavaSparkContext(spark.sparkContext());
     ```
 
-SparkSession (modern unified entry point):
+# SparkSession (modern unified entry point):
     Introduced in Spark 2.0 as the one main handle for everything:
         DataFrames / Datasets
         SQL
@@ -100,7 +100,7 @@ SparkSession (modern unified entry point):
     | Spark 2.x+ (modern)   | SparkSession (wraps SparkContext) | DataFrames, Datasets, SQL, Structured Streaming; RDDs via `spark.sparkContext()` |
     | --------------------- | --------------------------------- | -------------------------------------------------------------------------------- |
 
-Spark-provided API, grouped logically:
+# Spark-provided API, grouped logically:
     Core (RDD / low-level):
         Key types:
             SparkConf
@@ -171,7 +171,7 @@ Spark-provided API, grouped logically:
             Java typically uses GraphFrames (separate package) with:
                 GraphFrame built on Dataset<Row> vertices/edges.
 
-Dataset<Row> vs Dataset<Orders>
+# Dataset<Row> vs Dataset<Orders>
     For most Spark SQL-style workloads, Dataset<Row> will be faster than Dataset<Orders> (or any typed Dataset) 
     because the engine can stay in its super-optimized binary format and avoid creating Java/Scala objects.
     ```java
