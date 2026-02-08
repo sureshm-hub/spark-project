@@ -14,7 +14,7 @@ import static org.apache.spark.sql.functions.col;
  * https://docs.aws.amazon.com/prescriptive-guidance/latest/tuning-aws-glue-for-apache-spark/optimize-shuffles.html
  *
  */
-public class BuckeAndRepartitionDemo {
+public class BucketAndRepartitionDemo {
 
     public static void main(String[] args) {
 
