@@ -195,3 +195,57 @@
   - Cluster Manager starts the Application Master.
   - Application Master asks Cluster Manager for resources (Executors).
   - Driver tells Executors what tasks to run.
+
+## Lambda & Kappa Architecture
+  - Streaming systems are fundamentally trying to answer one hard question:
+    - How do I get **low-latency results and correct, recomputable results at scale**?
+    - **Lambda and Kappa** are two different answers to that same problem.
+  - **Lambda Architecture (Two parallel paths):**
+    - One path optimized for accuracy
+    - One path optimized for latency 
+    - Then merge them at query time
+  - The 3 layers:
+    - Batch Layer (Accuracy)
+      - Processes all historical data
+      - Recomputes results from scratch
+      - Source of truth
+      - Tech:
+        - Spark batch on EMR / Databricks
+        - Daily / hourly runs (T+1, T+2)
+    - Speed Layer (Low latency)
+      - Processes only new events 
+      - Near-real-time updates
+      - Eventually **overwritten by batch results**
+      - Tech Stack:
+        - Spark Streaming / Structured Streaming
+        - Kafka Streams / Flink
+        - Stateful streaming jobs
+      - Serving Layer:
+        - Merges batch + speed views
+        - Answers queries
+        - Tech:
+          - Pre-aggregated tables in Snowflake
+          - Elasticsearch
+  - **Kappa Architecture**
+    - There is only one path: streaming.
+      - If you need to recompute? Replay the stream from the beginning.
+    - Architecture flow:
+      - Immutable event log (Kafka is the system of record)
+      - Single streaming pipeline (Same code handles real-time + reprocessing)
+      - Serving layer (Same as Lambda)
+    - Tech Stack:
+      - Structured Streaming reading Kafka 
+      - Checkpointed state
+      - Reprocessing = reset offsets + re-run job
+    - Kappa simplifies Lambda by eliminating the batch layer and treating the event log as the source of truth, relying 
+      on stream replay for reprocessing.
+  - Where watermarking & state fit
+    - Lambda 
+      - Watermarking mostly in speed layer 
+      - Batch layer "fixes" late data eventually
+    - Kappa
+      - Watermarking is critical
+      - State eviction depends on event-time guarantees 
+      - Late data past watermark = dropped unless replayed
+
+## Spark Streaming
