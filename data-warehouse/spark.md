@@ -259,9 +259,23 @@
 
 ## 1. Core Concepts vs Batch
 
+- **is D Streams microbatching and Structered Streaming continuous straming?**
+  Yes, Spark DStreams exclusively use micro-batching to process data in small RDD chunks. Structured Streaming primarily 
+  uses micro-batching by default (offering 100+ ms latency) but also supports a "Continuous Processing" mode for true, 
+  low-latency streaming (sub-millisecond), making it more flexible.
+  **Key Differences:**
+  - DStreams (Spark Streaming): Uses a RDD-based model that breaks data streams into micro-batches for processing. 
+  It generally offers at-least-once delivery guarantees.
+  - Structured Streaming: Uses a DataFrame/Dataset-based model, offering exactly-once guarantees.
+    - Default Mode: Micro-batching (similar to DStreams but more optimized).
+    - Continuous Mode: True, continuous processing for ultra-low latency, though with fewer supported operations. 
+  - While DStreams is considered legacy, Structured Streaming is the modern, recommended approach that provides both options.
+
 - **Unified API**
-  - Structured Streaming uses the same DataFrame/Dataset and SQL APIs as batch; you define a long‑running query over an unbounded table instead of running one‑off jobs.[web:13]
-  - Transformations (select, filter, join, agg) are mostly identical; differences are in sources, sinks, triggers, and output modes.[web:13]
+  - Structured Streaming uses the same DataFrame/Dataset and SQL APIs as batch; you define a long‑running query over an 
+    unbounded table instead of running one‑off jobs.[web:13]
+  - Transformations (select, filter, join, agg) are mostly identical; differences are in sources, sinks, triggers, and 
+     output modes.[web:13]
 
 - **Micro‑batch and continuous execution**
   - Default engine runs in micro‑batches: each trigger picks new data, builds a micro‑batch, and runs the plan incrementally.[web:13]
@@ -374,7 +388,7 @@
   - Stateful operators persist state snapshots along with offsets; the combination defines the logical point in the stream up to which results are committed.[web:16]
   - Large or skewed state increases checkpoint size and recovery time, so watermarking and state cleanup are essential.[web:16]
 
-- **Operational considerations**
+- **Operational Considerations**
   - Never reuse the same checkpoint directory for different queries; doing so can corrupt state and progress tracking.[web:13]
   - When changing query logic in a state‑incompatible way (e.g., different key semantics), typically start with a fresh checkpoint and reprocess if needed.[web:13]
 
