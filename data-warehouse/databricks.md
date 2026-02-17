@@ -8,6 +8,8 @@
 4.  Delta solves data corruption and schema drift issues.
 5.  DBFS is a distributed file abstraction over cloud storage.
 6.  Unity Catalog centralizes governance and metadata management.
+6.  What are Workspaces?
+    * Collaborative environments for notebooks, jobs, clusters, and data artifacts.
 7.  A Metastore stores table metadata and schemas.
 
 ------------------------------------------------------------------------
@@ -46,6 +48,25 @@
     * Updates and inserts can degrade overtime
 13. VACUUM removes old unreferenced files.
     * retention period ( 7 days)
+15. What is Schema Enforcement?
+    Rejecting writes that don’t match the expected schema.
+16. What is Schema Evolution?
+    Automatically adapting table schema during writes when enabled.
+    **Methods to Enable Schema Evolution:**
+    - DataFrame Write (.option): Use .option("mergeSchema", "true") during .write or .writeStream operations to add 
+      new columns, which is ideal for Spark batch or streaming.
+    - SQL Merge (WITH SCHEMA EVOLUTION): Use MERGE WITH SCHEMA EVOLUTION in SQL syntax for MERGE operations to 
+      automatically adapt the table structure.
+    - Session-Wide Configuration (AutoMerge): Set the Spark configuration 
+       spark.databricks.delta.schema.autoMerge.enabled = true to enable automatic schema merging for all write 
+      operations in a Spark session.
+    - Table Properties (ALTER TABLE): Enable auto-merge for a specific table using 
+      ALTER TABLE table_name SET TBLPROPERTIES ('delta.autoMerge.enabled' = 'true').
+    **Key Considerations:**
+    - Automatic Merging: When enabled, new columns present in the source data but missing in the target table are 
+      automatically added.
+    - Merge Priority: Options specified within a query (mergeSchema) take precedence over the Spark session
+      configuration (autoMerge).
 14. MERGE INTO performs atomic upserts
     * **Merge Syntax**
     ```sql  
@@ -112,8 +133,59 @@
     THEN INSERT (customerId, address, current, effectiveDate, endDate)
     VALUES (s.customerId, s.address, TRUE, s.effectiveDate, NULL);
     ```
-15. Change Data Feed tracks row-level changes.
+    * **CDC to Delta Table**
+      * Collapse multiple CDC events per key to the latest one
+      * MERGE that latest state into the Delta table
+        * Merge rules:
+            - If key exists in target and source says deleted=true → DELETE
+            - If key exists in target and not deleted → UPDATE value
+            - If key doesn’t exist in target and not deleted → INSERT
+      * **_Assume:_**
+        * Target: delta_table(key, value)
+        * CDC feed: changes(key, time, newValue, deleted)
+    ```sql
+    WITH latest AS (
+    SELECT key, time, newValue, deleted
+    FROM (
+    SELECT
+    key, time, newValue, deleted,
+    ROW_NUMBER() OVER (PARTITION BY key ORDER BY time DESC) AS rn
+    FROM changes
+    )
+    WHERE rn = 1
+    )
+    MERGE INTO delta_table t
+    USING latest s
+    ON t.key = s.key
+    WHEN MATCHED AND s.deleted = true THEN DELETE
+    WHEN MATCHED AND s.deleted = false THEN UPDATE SET t.value = s.newValue
+    WHEN NOT MATCHED AND s.deleted = false THEN
+    INSERT (key, value) VALUES (s.key, s.newValue);
+    ```
+15. Change Data Feed tracks row-level changes using **table_changes** functions
+    ```sql
+        CREATE TABLE my_table (id INT, name STRING)
+        TBLPROPERTIES (delta.enableChangeDataFeed = true)
+
+        ALTER TABLE my_table SET TBLPROPERTIES (delta.enableChangeDataFeed = true)
     
+        SELECT * FROM table_changes('my_table', start_version, end_version)
+
+        df = spark.read.format("delta").option("readChangeFeed", "true").option("startingVersion", version)
+             .load("path/to/table")
+    ```
+    **Schema for Change Data Feed**
+    - data columns from the schema of the Delta table 
+    - **metadata** columns: 
+      * _change_type (_insert, update_preimage , update_postimage, delete_), 
+      * _commit_version,
+      * _commit_timestamp
+    - **Finding Specific Change Values:**
+      - Filter for updates on _change_type to update_preimage and update_postimage.
+      - Compare the rows "same original primary key and _commit_version": 
+        - update_preimage row contains the "old" values, and  update_postimage row contains the "new" values.
+      - Perform analysis: Join or compare the pre- and post-images to pinpoint exact column-level differences, 
+        - for example, by selecting columns where the values differ between the pre- and post-image rows.
 ------------------------------------------------------------------------
 
 ## Performance & Optimization
