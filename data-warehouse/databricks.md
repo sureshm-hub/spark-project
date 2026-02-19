@@ -8,9 +8,8 @@
 4.  Delta solves data corruption and schema drift issues.
 5.  DBFS is a distributed file abstraction over cloud storage.
 6.  Unity Catalog centralizes governance and metadata management.
-6.  What are Workspaces?
-    * Collaborative environments for notebooks, jobs, clusters, and data artifacts.
-7.  A Metastore stores table metadata and schemas.
+6.  Workspaces are Collaborative environments for notebooks, jobs, clusters, and data artifacts.
+7.  A Metastore stores table metadata and schemas & permissions
 
 ------------------------------------------------------------------------
 
