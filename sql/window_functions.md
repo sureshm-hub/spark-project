@@ -28,3 +28,29 @@ WITH daily_branch_totals_ranked (
 from daily_branch_totals_ranked
 where  rank = 2
 ```
+
+
+```python
+from pyspark.sql import functions as F, Window as W
+
+# 1) fitler year = 2025 
+df_2025 = transactions_df.filter(F.year("trans_date") == 2025)
+
+
+# 2) agg daily totals
+daily = (df_2025
+         .groupBy("branch_id", "trans_date")
+         .agg(F.sum("amount").alias("daily_total")))
+
+# 3) dense-rank with each branch by daily total desc
+spec = W.partition_by("branch_id").orderBy(F.col("daily_total").desc())
+
+daily_branch_totals_ranked = daily.withColumn("rank", F.dense_rank().over(spec))
+
+#  4) pick rank = 2
+
+result = (daily_branch_totals_ranked
+          .filter(F.col("rank") == 2)
+          .select("branch_id", "trans_date", "daily_total"))
+# result.show()
+```
