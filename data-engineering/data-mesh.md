@@ -1,4 +1,5 @@
 https://www.perplexity.ai/search/what-is-datamesh-Xj8mZbj3TySNxU0.gz9TPw
+https://aws.amazon.com/blogs/big-data/how-jpmorgan-chase-built-a-data-mesh-architecture-to-drive-significant-value-to-enhance-their-enterprise-data-platform/
 
 
 What is Data Mesh? [-11]
